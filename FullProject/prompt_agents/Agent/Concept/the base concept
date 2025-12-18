@@ -1,0 +1,7 @@
+base.py
+│
+├─ paths (where things live)
+├─ reports (how agents talk)
+├─ run_child (how agents run)
+├─ json helpers (how data moves)
+└─ selection helpers (how YOU decide)
