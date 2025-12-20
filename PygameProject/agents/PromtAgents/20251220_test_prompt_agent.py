@@ -26,7 +26,7 @@ print(f"Loaded .env from: {ENV_PATH}")
 # Check values
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    raise SystemExit("❌ Missing OPENAI_API_KEY. Is your .env file in the same folder as this script?")
+    raise SystemExit("Missing OPENAI_API_KEY. Is your .env file in the same folder as this script?")
 
 print(" OPENAI_API_KEY loaded")
 
