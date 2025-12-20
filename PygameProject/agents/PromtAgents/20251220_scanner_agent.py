@@ -10,10 +10,15 @@ from openai import OpenAI
 
 from Agent.core.base import AgentReport, new_run_id, write_report, REPO_ROOT
 
+
+
 ENV_PATH = REPO_ROOT / "Agent" / ".env"
 load_dotenv(ENV_PATH)
 
 client = OpenAI()
+
+import inspect
+print(inspect.signature(client.responses.create))
 
 SYSTEM = """You are a scanner for a Python repository.
 
@@ -61,8 +66,6 @@ def run() -> Path:
             ],
             text={"format": {"type": "json_object"}},
         )
-        data = json.loads(resp.output_text)
-
         raw = resp.output_text
         data = json.loads(raw)
 

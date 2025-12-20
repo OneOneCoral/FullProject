@@ -1,9 +1,0 @@
-{
-  "agent_name": "scanner",
-  "run_id": "scanner-20251220-165755",
-  "created_at": 1766246279.8556914,
-  "ok": false,
-  "summary": "Scanner failed: Responses.create() got an unexpected keyword argument 'response_format'",
-  "data": {},
-  "artifacts": []
-}
