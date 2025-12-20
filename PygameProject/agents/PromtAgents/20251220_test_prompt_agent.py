@@ -1,31 +1,34 @@
 from __future__ import annotations
-
 import json
 import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-
 from dotenv import load_dotenv
 from openai import OpenAI
 
 
-
 # -------------------------
-# Config
+# Config and .env loading
 # -------------------------
 
+# Get this script's location (e.g. .../agents/PromtAgents)
+SCRIPT_DIR = Path(__file__).parent
 
-REPO_ROOT = Path.cwd()  # MUST be repo root; set PyCharm Working Directory accordingly
-AGENT_DIR = REPO_ROOT / "Agent"
-ENV_PATH = AGENT_DIR / ".env"
+# Set .env path in same folder as this script
+ENV_PATH = SCRIPT_DIR / ".env"
 
+# Load it
 load_dotenv(ENV_PATH)
+print(f"Loaded .env from: {ENV_PATH}")
 
+# Check values
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    raise SystemExit("Missing OPENAI_API_KEY. Put it in Agent/.env")
+    raise SystemExit("❌ Missing OPENAI_API_KEY. Is your .env file in the same folder as this script?")
+
+print(" OPENAI_API_KEY loaded")
 
 # Safety: start in DRY_RUN so you can inspect diffs before writing.
 DRY_RUN = os.getenv("CODERUNNERX_DRY_RUN", "false").lower() in ("1", "true", "yes")
@@ -38,10 +41,10 @@ ALLOWED_EDIT_PATH_SUFFIXES = [
 
 # If you want the agent to be able to "improve itself", you can allow edits inside Agent/
 # but ONLY after you've tested safely. Leave False for now.
-ALLOW_SELF_EDIT = os.getenv("CODERUNNERX_ALLOW_SELF_EDIT", "false").lower() in ("1", "true", "yes")
+ALLOW_SELF_EDIT = os.getenv("twst_prompt_agent_ALLOW_SELF_EDIT", "false").lower() in ("1", "true", "yes")
 
 # Optional: allow edits to agent code (still constrained)
-SELF_EDIT_SUFFIXES = ["Agent/code_runner_x.py"]
+SELF_EDIT_SUFFIXES = ["Agent/20251220_test_prompt_agent.py"]
 
 MODEL = os.getenv("CODERUNNERX_MODEL", "gpt-4.1")
 
@@ -112,13 +115,10 @@ class Agent:
 class ScannerAgent(Agent):
     name = "scanner"
 
-    SYSTEM = """You are CodeRunner-X Scanner for a Python Pygame repo.
+    SYSTEM = """You are test_prompt_agent for a Python Pygame repo.
 
 Task:
-- Identify the most likely entrypoint file(s) that should start the game.
-- Identify where the main loop is or should be.
-- Propose minimal fixes needed to get a working window + stable loop:
-  pygame.init(), display.set_mode, event loop with QUIT, Clock tick.
+- Create a new branch where u deploy a file with the picture of a cat written with singes.
 
 Output MUST be strict JSON:
 {
@@ -165,179 +165,6 @@ Return ONLY JSON.
                 if suf not in ALLOWED_EDIT_PATH_SUFFIXES:
                     ALLOWED_EDIT_PATH_SUFFIXES.append(suf)
 
-        return ctx, []
-
-
-class EntrypointAgent(Agent):
-    name = "entrypoint"
-
-    SYSTEM = """You are CodeRunner-X Entrypoint Agent.
-
-Goal:
-- Create (or update) a repository-root main.py that runs a working Pygame main loop.
-- You MUST base it on the best existing working entrypoint in the repo (prefer newest date).
-- Keep it minimal and runnable.
-- If there are shared classes (e.g. Game, Player, Engine), try importing and using them,
-  but only if they import cleanly. Otherwise keep a minimal loop.
-
-Output strict JSON:
-{
-  "path": "<absolute path to repo-root main.py>",
-  "summary": "<1-2 sentences>",
-  "updated_code": "<full file contents>"
-}
-Return ONLY JSON.
-"""
-
-    def run(self, ctx: RepoContext) -> Tuple[RepoContext, List[Change]]:
-        target = str(ctx.repo_root / "main.py")
-        existing = ctx.files.get(target, "")
-
-        payload = {
-            "repo_root": str(ctx.repo_root),
-            "target_path": target,
-            "target_exists": bool(existing),
-            "target_code": existing,
-            "scanner_notes": ctx.notes,
-            "all_python_paths": sorted(list(ctx.files.keys())),
-        }
-
-        resp = client.responses.create(
-            model=MODEL,
-            input=[
-                {"role": "system", "content": self.SYSTEM},
-                {"role": "user", "content": json.dumps(payload)},
-            ],
-        )
-        data = json.loads(resp.output_text)
-        upd = data["updated_code"]
-        return ctx, [Change(path=data["path"], summary=data.get("summary", ""), updated_code=upd)]
-
-
-class FixerAgent(Agent):
-    name = "fixer"
-
-    SYSTEM = """You are CodeRunner-X Fixer for a Python Pygame repository.
-
-Primary goal:
-- Produce a working entrypoint that launches a window and runs a stable main loop:
-  pygame.init()
-  screen = pygame.display.set_mode(...)
-  clock = pygame.time.Clock()
-  while running:
-    handle events (QUIT)
-    update()
-    draw()
-    pygame.display.flip()
-    clock.tick(60)
-  pygame.quit()
-
-Constraints:
-- Minimal edits. Reuse existing Game/Engine classes if present.
-- Fix imports and wiring only. Avoid big refactors.
-- Do not add dependencies.
-- If you are unsure, leave file unchanged.
-
-Output MUST be strict JSON:
-{
-  "path": "<path>",
-  "summary": "<1-2 sentences or 'no change'>",
-  "updated_code": "<full file text>"
-}
-Return ONLY JSON.
-"""
-
-    def run(self, ctx: RepoContext) -> Tuple[RepoContext, List[Change]]:
-        changes: List[Change] = []
-
-        # Only attempt to fix files we allow
-        for path, code in ctx.files.items():
-            if not is_allowed_to_edit(path):
-                continue
-
-            payload = {
-                "path": path,
-                "repo_notes": ctx.notes[-20:],  # give the fixer recent context
-                "code": code,
-                "all_python_paths_sample": sorted(list(ctx.files.keys()))[:300],
-            }
-
-            resp = client.responses.create(
-                model=MODEL,
-                input=[
-                    {"role": "system", "content": self.SYSTEM},
-                    {"role": "user", "content": json.dumps(payload)},
-                ],
-            )
-
-            data = json.loads(resp.output_text)
-            upd = data["updated_code"]
-            summary = data.get("summary", "")
-
-            if upd != code:
-                changes.append(Change(path=path, summary=summary, updated_code=upd))
-            else:
-                ctx.notes.append(f"[fixer] no change: {path}")
-
-        return ctx, changes
-
-
-class SelfImproveAgent(Agent):
-    """
-    Optional: lets the tool improve itself (e.g., better prompts, better allowlist logic).
-    Keep disabled until you trust the workflow.
-    """
-    name = "self_improve"
-
-    SYSTEM = """You are CodeRunner-X Self-Improve Agent.
-
-Goal:
-- Improve Agent/code_runner_x.py to make it safer and more effective:
-  - better dry-run behavior
-  - clearer logs
-  - better target detection
-  - safer constraints
-
-Rules:
-- Only modify Agent/code_runner_x.py
-- Keep changes minimal and safe
-- Output strict JSON {path, summary, updated_code}
-Return ONLY JSON.
-"""
-
-    def run(self, ctx: RepoContext) -> Tuple[RepoContext, List[Change]]:
-        if not ALLOW_SELF_EDIT:
-            ctx.notes.append("[self_improve] disabled")
-            return ctx, []
-
-        target = str(AGENT_DIR / "code_runner_x.py")
-        if target not in ctx.files:
-            ctx.notes.append("[self_improve] target not found")
-            return ctx, []
-
-        payload = {"path": target, "code": ctx.files[target]}
-        resp = client.responses.create(
-            model=MODEL,
-            input=[
-                {"role": "system", "content": self.SYSTEM},
-                {"role": "user", "content": json.dumps(payload)},
-            ],
-        )
-        data = json.loads(resp.output_text)
-        upd = data["updated_code"]
-        if upd != ctx.files[target]:
-            return ctx, [Change(path=target, summary=data.get("summary", ""), updated_code=upd)]
-        return ctx, []
-
-
-class SmokeTestAgent(Agent):
-    name = "smoke_test"
-
-    def run(self, ctx: RepoContext) -> Tuple[RepoContext, List[Change]]:
-        # Lightweight checks that don’t run the game:
-        # - python -m py_compile on edited files (after edits are applied)
-        # We run later; here just record intent.
-        ctx.notes.append("[smoke_test] will run py_compile after apply")
         return ctx, []
 
 
