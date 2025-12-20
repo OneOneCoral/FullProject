@@ -33,8 +33,8 @@ class CreateFileAgent:
     name = "create_file_test"
 
     def run(self) -> List[Change]:
-        target = STATE_DIR / "hello_from_agent.txt"
-        content = "Hello from agent!\n\n=^.^=\n"
+        target = STATE_DIR / "uploade.txt"
+        content = "up from agent!\n\n=^.^=\n"
         return [Change(path=target, summary="Create test file in Agent/state", content=content)]
 
 
