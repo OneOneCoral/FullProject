@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Dict
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from pygame.Agent.Working_Agents.base import AgentReport, new_run_id, write_report, REPO_ROOT
+from Agent.core.base import AgentReport, new_run_id, write_report, REPO_ROOT
 
 ENV_PATH = REPO_ROOT / "Agent" / ".env"
 load_dotenv(ENV_PATH)
 
 client = OpenAI()
 
-SYSTEM = """You are a scanner for a Python Pygame repository.
+SYSTEM = """You are a scanner for a Python repository.
 
 Return strict JSON with:
 {
@@ -23,8 +24,7 @@ Return strict JSON with:
   "recommended_edit_targets": ["<abs path>", ...]
 }
 
-Pick entrypoints that likely start a pygame window and contain a main loop.
-Return ONLY JSON.
+Please read the files in the repository and return a summary of files.
 """
 
 def load_python_files(repo_root: Path) -> Dict[str, str]:
@@ -44,7 +44,6 @@ def run() -> Path:
     files = load_python_files(REPO_ROOT)
     paths = sorted(files.keys())
 
-    # Provide a small sample of likely candidates
     likely = [p for p in paths if p.endswith(("main.py", "game.py", "app.py", "run.py"))]
     payload = {
         "repo_root": str(REPO_ROOT),
@@ -60,22 +59,28 @@ def run() -> Path:
                 {"role": "system", "content": SYSTEM},
                 {"role": "user", "content": json.dumps(payload)},
             ],
+            text={"format": {"type": "json_object"}},
         )
         data = json.loads(resp.output_text)
+
+        raw = resp.output_text
+        data = json.loads(raw)
+
         report = AgentReport(
             agent_name="scanner",
             run_id=run_id,
-            created_at=__import__("time").time(),
+            created_at=time.time(),
             ok=True,
-            summary="Scanned repo for likely entrypoints and main loops.",
+            summary="Scanned repo for python files.",
             data=data,
             artifacts=[],
         )
+
     except Exception as e:
         report = AgentReport(
             agent_name="scanner",
             run_id=run_id,
-            created_at=__import__("time").time(),
+            created_at=time.time(),
             ok=False,
             summary=f"Scanner failed: {e}",
             data={},

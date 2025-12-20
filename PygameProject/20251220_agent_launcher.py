@@ -1,13 +1,16 @@
 import sys
 import subprocess
 from pathlib import Path
+import importlib
 import pkgutil
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
+import os
+from Agent.core.base import is_dry_run
 # -------------------------
 # Setup
 # -------------------------
-REPO_ROOT = Path(__file__).resolve().parent  # <-- repo root (PygameProject)
+REPO_ROOT = Path(__file__).resolve().parent  # adjust if needed
 ENV_PATH = REPO_ROOT / "agents" / "PromtAgents" / ".env"
 load_dotenv(ENV_PATH)
 
@@ -41,45 +44,50 @@ def discover_agents():
 
 def choose_agent(agent_map):
     print("\nSelect an agent to run:\n")
-    names = list(agent_map.keys())
-    for i, name in enumerate(names, 1):
+    for i, name in enumerate(agent_map.keys(), 1):
         print(f"  {i}) {name}")
 
     choice = input("\nAgent> ").strip()
-
     if choice.isdigit():
         idx = int(choice)
-        if 1 <= idx <= len(names):
-            return names[idx - 1]
-
-    if choice in agent_map:
+        if 1 <= idx <= len(agent_map):
+            return list(agent_map.keys())[idx - 1]
+    elif choice in agent_map:
         return choice
-
     print("Invalid choice. Exiting.")
     sys.exit(1)
 
 
 def main():
     agents = discover_agents()
+    if not agents:
+        print("No agents found.")
+        sys.exit(1)
+
+    # Ask once, force y/n
+    ans = input("Run in DRY_RUN mode? [y/n]: ").strip().lower()
+    while ans not in {"y", "n"}:
+        ans = input("Please enter y or n: ").strip().lower()
+
+    dry_run = (ans == "y")
+
+    # Choose agent
     selected = choose_agent(agents)
     mod = agents[selected]
 
-    print(f"\n▶ Running agent: {selected}")
-    print(f"  module: {mod}\n")
-
-    import os
+    # Build child env and set DRY_RUN explicitly
     env = os.environ.copy()
-
-    run_mode = input("Run in DRY_RUN mode? [Y/n]: ").strip().lower()
-    dry_run = not (run_mode == "n")
     env["CODERUNNERX_DRY_RUN"] = "true" if dry_run else "false"
+
+    print(f"\n▶ Running agent: {selected}")
+    print(f"  module: {mod}")
+    print(f"  CODERUNNERX_DRY_RUN={env['CODERUNNERX_DRY_RUN']}\n")
 
     result = subprocess.run(
         [sys.executable, "-m", mod],
         cwd=str(REPO_ROOT),
         env=env,
     )
-
     sys.exit(result.returncode)
 
 

@@ -10,13 +10,7 @@ print("cwd:", os.getcwd())
 print("sys.path[0]:", sys.path[0])
 print("sys.path:", sys.path)
 
-from Agent.core.base import REPO_ROOT, STATE_DIR
-
-
-# -------------------------
-# Config
-# -------------------------
-DRY_RUN = os.getenv("CODERUNNERX_DRY_RUN", "true").lower() in ("1", "true", "yes", "on")
+from Agent.core.base import REPO_ROOT, STATE_DIR, is_dry_run, safe_write_text
 
 
 # -------------------------
@@ -54,12 +48,11 @@ def apply_changes(changes: List[Change]) -> None:
 
     print("Repo root:", REPO_ROOT)
     print("STATE_DIR:", STATE_DIR)
-    print("DRY_RUN:", DRY_RUN)
     print("\nPlanned changes:")
     for c in changes:
         print(f"- {c.path} :: {c.summary}")
 
-    if DRY_RUN:
+    if is_dry_run:
         print("\nDRY_RUN is enabled -> not writing files.")
         print("Set CODERUNNERX_DRY_RUN=false to actually write.")
         return

@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -8,6 +7,7 @@ import subprocess
 import sys
 import time
 
+import os
 
 # -----------------------------
 # Paths (single source of truth)
@@ -34,6 +34,13 @@ class AgentReport:
     data: Dict[str, Any]
     artifacts: List[str]
 
+def is_dry_run() -> bool:
+    """
+    Global hard-safety switch.
+    Defaults to True (safe) unless explicitly set to false-ish.
+    """
+    v = os.getenv("CODERUNNERX_DRY_RUN", "true").strip().lower()
+    return v not in {"0", "false", "no", "n", "off"}
 
 # -----------------------------
 # Report helpers
@@ -45,6 +52,7 @@ def new_run_id(agent_name: str) -> str:
 
 def write_report(report: AgentReport) -> Path:
     path = REPORTS_DIR / f"{report.run_id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(asdict(report), indent=2), encoding="utf-8")
     return path
 
@@ -54,6 +62,14 @@ def read_latest_report(agent_name: str) -> Optional[Dict[str, Any]]:
     if not files:
         return None
     return json.loads(files[-1].read_text(encoding="utf-8"))
+
+def safe_write_text(path: Path, content: str) -> None:
+    if is_dry_run():
+        print(f"DRY_RUN -> would write: {path}")
+        return
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
 
 
 # -----------------------------
