@@ -18,7 +18,7 @@ load_dotenv(ENV_PATH)
 # -------------------------
 
 def discover_agents():
-    agent_modules = {}1
+    agent_modules = {}
     base_packages = [
         ("agents.Working_Agents", REPO_ROOT / "agents" / "Working_Agents"),
         ("agents.PromtAgents", REPO_ROOT / "agents" / "PromtAgents")

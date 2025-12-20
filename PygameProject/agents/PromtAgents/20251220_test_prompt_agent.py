@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from Agent.core.base import REPO_ROOT, AgentReport, write_report, run_child
 
 # -------------------------
 # Config and .env loading
@@ -69,9 +70,20 @@ def load_python_files(repo_root: Path) -> Dict[str, str]:
 
 
 def is_allowed_to_edit(path: str) -> bool:
-    # allow repo-root main.py explicitly
-    if path == str(REPO_ROOT / "main.py"):
+    p = Path(path).resolve()
+
+    # always require edits to be inside repo
+    try:
+        p.relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return False
+
+    # allow root main.py explicitly
+    if p == (REPO_ROOT / "main.py").resolve():
         return True
+
+    # allow by filename suffix list
+    return p.name in ALLOWED_EDIT_PATH_SUFFIXES
 
 def write_file(path: str, content: str) -> None:
     p = Path(path)
@@ -112,22 +124,7 @@ class Agent:
         raise NotImplementedError
 
 
-class ScannerAgent(Agent):
-    name = "scanner"
 
-    SYSTEM = """You are test_prompt_agent for a Python Pygame repo.
-
-Task:
-- Create a new branch where u deploy a file with the picture of a cat written with singes.
-
-Output MUST be strict JSON:
-{
-  "entrypoints": ["<path>", ...],
-  "notes": ["...", "..."],
-  "recommended_edit_targets": ["<path>", ...]
-}
-Return ONLY JSON.
-"""
 
     def run(self, ctx: RepoContext) -> Tuple[RepoContext, List[Change]]:
         # Keep the scan small: file list + a few likely candidates’ content (if present)
