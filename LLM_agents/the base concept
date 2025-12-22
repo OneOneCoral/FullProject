@@ -1,7 +1,1 @@
-base.py
-│
-├─ paths (where things live)
-├─ reports (how agents talk)
-├─ run_child (how agents run)
-├─ json helpers (how data moves)
-└─ selection helpers (how YOU decide)
+#generate a readme fill that explains the goal of this Folder LLM agents meaning an agent tree/cycle in a image form written from text
