@@ -12,20 +12,16 @@ import os
 # -----------------------------
 # Paths (single source of truth)
 # -----------------------------
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parent  # .../LLM_agents
 
-STATE_DIR = REPO_ROOT / "Agent" / "state"
+STATE_DIR = REPO_ROOT / "state"
 REPORTS_DIR = STATE_DIR / "reports"
 
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# -----------------------------
-# LLM-visible project roots
-# -----------------------------
-PROJECT_ROOTS = [
-    REPO_ROOT / "Pygame",
-]
+# LLM-visible project roots (optional)
+PROJECT_ROOTS = [REPO_ROOT]
 
 # -----------------------------
 # Report model (agent contract)
@@ -45,13 +41,9 @@ class AgentReport:
 # -----------------------------
 # Report helpers
 # -----------------------------
+
 def is_dry_run() -> bool:
-    """
-    Global hard-safety switch.
-    Defaults to True (safe) unless explicitly set to false-ish.
-    """
-    v = os.getenv("CODERUNNERX_DRY_RUN", "true").strip().lower()
-    return v not in {"0", "false", "no", "n", "off"}
+    return os.getenv("CODERUNNERX_DRY_RUN", "false").lower() == "true"
 
 def new_run_id(agent_name: str) -> str:
     ts = time.strftime("%Y%m%d-%H%M%S")
@@ -64,20 +56,30 @@ def write_report(report: AgentReport) -> Path:
     path.write_text(json.dumps(asdict(report), indent=2), encoding="utf-8")
     return path
 
-
 def read_latest_report(agent_name: str) -> Optional[Dict[str, Any]]:
     files = sorted(REPORTS_DIR.glob(f"{agent_name}-*.json"))
     if not files:
         return None
     return json.loads(files[-1].read_text(encoding="utf-8"))
 
-def safe_write_text(path: Path, content: str) -> None:
-    if is_dry_run():
-        print(f"DRY_RUN -> would write: {path}")
+def safe_write_text(path: Path, content: str, *, allow_root: Path = STATE_DIR) -> None:
+    path = Path(path)
+
+    # permission guardrail
+    try:
+        path.resolve().relative_to(allow_root.resolve())
+    except ValueError:
+        print(f"[SKIP] Not allowed to write outside {allow_root}: {path}")
         return
 
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    if is_dry_run():
+        print(f"[DRY_RUN] Would write: {path}")
+        return
+
     path.write_text(content, encoding="utf-8")
+    print(f"[WRITE] File written: {path}")
 
 
 # -----------------------------
@@ -90,3 +92,5 @@ def run_child(module: str) -> int:
     """
     proc = subprocess.run([sys.executable, "-m", module], cwd=str(REPO_ROOT), check=False)
     return proc.returncode
+
+
