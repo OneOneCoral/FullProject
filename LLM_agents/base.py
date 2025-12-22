@@ -8,6 +8,8 @@ import sys
 import time
 
 import os
+from typing import Protocol, List
+
 
 # -----------------------------
 # Paths (single source of truth)
@@ -37,10 +39,11 @@ class AgentReport:
     artifacts: List[str]
 
 
-
-# -----------------------------
-# Report helpers
-# -----------------------------
+@dataclass
+class Change:
+    path: Path
+    summary: str
+    content: str
 
 def is_dry_run() -> bool:
     return os.getenv("CODERUNNERX_DRY_RUN", "false").lower() == "true"
@@ -93,4 +96,16 @@ def run_child(module: str) -> int:
     proc = subprocess.run([sys.executable, "-m", module], cwd=str(REPO_ROOT), check=False)
     return proc.returncode
 
+def apply_changes(changes: List[Change]) -> None:
+    if not changes:
+        print("No changes.")
+        return
 
+    print("Repo root:", REPO_ROOT)
+    print("STATE_DIR:", STATE_DIR)
+    print("\nPlanned changes:")
+    for c in changes:
+        print(f"- {c.path} :: {c.summary}")
+
+    for c in changes:
+        safe_write_text(c.path, c.content)  # allow_root defaults to STATE_DIR
