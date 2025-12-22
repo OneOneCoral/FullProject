@@ -12,7 +12,7 @@ print("sys.path:", sys.path)
 
 from Agent.core.base import REPO_ROOT, STATE_DIR, is_dry_run, safe_write_text
 
-
+print(">>> Agent module loaded:", __name__)
 # -------------------------
 # Minimal framework
 # -------------------------

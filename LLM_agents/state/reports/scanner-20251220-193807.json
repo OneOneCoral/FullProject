@@ -1,0 +1,33 @@
+{
+  "agent_name": "scanner",
+  "run_id": "scanner-20251220-193807",
+  "created_at": 1766255895.4768028,
+  "ok": true,
+  "summary": "Scanned repo for python files.",
+  "data": {
+    "entrypoints": [
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251020\\Classes\\main.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251021\\singlescripts\\main.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\main.py"
+    ],
+    "notes": [
+      "There are 3 clear entry point scripts named 'main.py' in different subdirectories (20251020/Classes, 20251021/singlescripts, 20251024), each implementing a Pygame-based game loop.",
+      "The 20251024/main.py appears to be the latest and most advanced, with structured input handling, profiling, minimap handling, controller support, and organized object-oriented code structure (Renderer, Profiler, etc).",
+      "The project structure appears to follow an iterative, date-stamped workflow, suggesting a process of active experimentation and refactoring over time.",
+      "Each stage (20251020, 20251021, 20251024) seems to have its own self-contained implementation, possibly not sharing much code between them aside from utility modules (camera.py, player.py, world.py, etc within their respective folders).",
+      "Non-main python scripts (Animation.py, camera.py, config.py, input_handler.py, etc) implement subsystems and utilities for game objects, input, rendering, profiling, and world logic.",
+      "Recommended edit targets are the latest main.py (20251024) and its corresponding modules for further development, as it is the most feature-complete."
+    ],
+    "recommended_edit_targets": [
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\main.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\player.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\input_handler.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\rendering.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\world.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\camera.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\config.py",
+      "C:\\Users\\carlw\\GitHub\\Projects\\PygameProject\\Pygame\\PygameTest\\20251024\\mini_map.py"
+    ]
+  },
+  "artifacts": []
+}

@@ -8,8 +8,7 @@ from typing import Dict
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from Agent.core.base import AgentReport, new_run_id, write_report, REPO_ROOT
-
+from Agent.core.base import AgentReport, new_run_id, write_report, REPO_ROOT, PROJECT_ROOTS
 
 
 ENV_PATH = REPO_ROOT / "Agent" / ".env"
@@ -19,6 +18,8 @@ client = OpenAI()
 
 import inspect
 print(inspect.signature(client.responses.create))
+print(">>> Agent module loaded:", __name__)
+
 
 SYSTEM = """You are a scanner for a Python repository.
 
@@ -46,7 +47,10 @@ def load_python_files(repo_root: Path) -> Dict[str, str]:
 
 def run() -> Path:
     run_id = new_run_id("scanner")
-    files = load_python_files(REPO_ROOT)
+
+    files = {}
+    for root in PROJECT_ROOTS:
+        files.update(load_python_files(root))
     paths = sorted(files.keys())
 
     likely = [p for p in paths if p.endswith(("main.py", "game.py", "app.py", "run.py"))]
@@ -89,9 +93,10 @@ def run() -> Path:
             data={},
             artifacts=[],
         )
-
+    print(json.dumps(report.data, indent=2))
     return write_report(report)
 
 if __name__ == "__main__":
     out = run()
+
     print("Wrote report:", out)

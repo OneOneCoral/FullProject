@@ -12,7 +12,7 @@ import os
 # -----------------------------
 # Paths (single source of truth)
 # -----------------------------
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 STATE_DIR = REPO_ROOT / "Agent" / "state"
 REPORTS_DIR = STATE_DIR / "reports"
@@ -20,6 +20,12 @@ REPORTS_DIR = STATE_DIR / "reports"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# -----------------------------
+# LLM-visible project roots
+# -----------------------------
+PROJECT_ROOTS = [
+    REPO_ROOT / "Pygame",
+]
 
 # -----------------------------
 # Report model (agent contract)
@@ -34,6 +40,11 @@ class AgentReport:
     data: Dict[str, Any]
     artifacts: List[str]
 
+
+
+# -----------------------------
+# Report helpers
+# -----------------------------
 def is_dry_run() -> bool:
     """
     Global hard-safety switch.
@@ -42,9 +53,6 @@ def is_dry_run() -> bool:
     v = os.getenv("CODERUNNERX_DRY_RUN", "true").strip().lower()
     return v not in {"0", "false", "no", "n", "off"}
 
-# -----------------------------
-# Report helpers
-# -----------------------------
 def new_run_id(agent_name: str) -> str:
     ts = time.strftime("%Y%m%d-%H%M%S")
     return f"{agent_name}-{ts}"
