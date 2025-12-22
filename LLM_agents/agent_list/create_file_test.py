@@ -10,7 +10,7 @@ print("cwd:", os.getcwd())
 print("sys.path[0]:", sys.path[0])
 print("sys.path:", sys.path)
 
-from Agent.core.base import REPO_ROOT, STATE_DIR, is_dry_run, safe_write_text
+from base import REPO_ROOT, STATE_DIR, is_dry_run, safe_write_text
 
 print(">>> Agent module loaded:", __name__)
 # -------------------------

@@ -135,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+LLM_agents/.env
 .envrc
 .venv
 env/
