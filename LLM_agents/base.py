@@ -1,14 +1,14 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import json
+import os
 import subprocess
 import sys
 import time
 
-import os
-from typing import Protocol, List
 
 
 # -----------------------------
@@ -26,9 +26,6 @@ GAME_DIR = REPO_ROOT / "game"
 GAME_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_WRITE_ROOTS = [STATE_DIR, GAME_DIR]
-
-
-
 
 # LLM-visible project roots (optional)
 PROJECT_ROOTS = [REPO_ROOT]
@@ -100,8 +97,6 @@ def safe_write_text(path: Path, content: str, *, allow_roots: list[Path] | None 
     path.write_text(content, encoding="utf-8")
     print(f"[WRITE] File written: {path}")
 
-
-
 # -----------------------------
 # Run a child agent (module)
 # -----------------------------
@@ -128,5 +123,4 @@ def apply_changes(changes: List[Change]) -> None:
         p = Path(c.path)
         if not p.is_absolute():
             p = (REPO_ROOT / p)
-
         safe_write_text(p, c.content, allow_roots=ALLOWED_WRITE_ROOTS)
