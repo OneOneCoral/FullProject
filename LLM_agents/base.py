@@ -17,10 +17,18 @@ from typing import Protocol, List
 REPO_ROOT = Path(__file__).resolve().parent  # .../LLM_agents
 
 STATE_DIR = REPO_ROOT / "state"
-REPORTS_DIR = STATE_DIR / "reports"
-
 STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+REPORTS_DIR = STATE_DIR / "reports"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+GAME_DIR = REPO_ROOT / "game"
+GAME_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_WRITE_ROOTS = [STATE_DIR, GAME_DIR]
+
+
+
 
 # LLM-visible project roots (optional)
 PROJECT_ROOTS = [REPO_ROOT]
@@ -65,14 +73,22 @@ def read_latest_report(agent_name: str) -> Optional[Dict[str, Any]]:
         return None
     return json.loads(files[-1].read_text(encoding="utf-8"))
 
-def safe_write_text(path: Path, content: str, *, allow_root: Path = STATE_DIR) -> None:
+def safe_write_text(path: Path, content: str, *, allow_roots: list[Path] | None = None) -> None:
     path = Path(path)
+    allow_roots = allow_roots or [STATE_DIR]
 
-    # permission guardrail
-    try:
-        path.resolve().relative_to(allow_root.resolve())
-    except ValueError:
-        print(f"[SKIP] Not allowed to write outside {allow_root}: {path}")
+    resolved = path.resolve()
+    ok = False
+    for root in allow_roots:
+        try:
+            resolved.relative_to(root.resolve())
+            ok = True
+            break
+        except ValueError:
+            pass
+
+    if not ok:
+        print(f"[SKIP] Not allowed to write outside: {[str(r) for r in allow_roots]} :: {path}")
         return
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -83,6 +99,7 @@ def safe_write_text(path: Path, content: str, *, allow_root: Path = STATE_DIR) -
 
     path.write_text(content, encoding="utf-8")
     print(f"[WRITE] File written: {path}")
+
 
 
 # -----------------------------
@@ -108,4 +125,8 @@ def apply_changes(changes: List[Change]) -> None:
         print(f"- {c.path} :: {c.summary}")
 
     for c in changes:
-        safe_write_text(c.path, c.content)  # allow_root defaults to STATE_DIR
+        p = Path(c.path)
+        if not p.is_absolute():
+            p = (REPO_ROOT / p)
+
+        safe_write_text(p, c.content, allow_roots=ALLOWED_WRITE_ROOTS)
