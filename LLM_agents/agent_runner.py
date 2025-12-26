@@ -11,6 +11,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from agent_runner_base.agent_runtime.game_capture_runner import run_game_capture
+from agent_runner_base.state.store import write_run
 
 # -------------------------
 # Setup
@@ -185,6 +186,13 @@ def main() -> None:
             trace_id=env["TRACE_ID"],
             timeout_sec=20,  # tweak
             headless=False,  # set True if you're running in CI/no display
+        )
+
+        write_run(
+            trace_id=env["TRACE_ID"],
+            agent_module=mod,
+            agent_returncode=code,
+            game_result=result,
         )
 
         print("\n--- Game Run Result ---")
