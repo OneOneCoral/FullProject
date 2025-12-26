@@ -1,5 +1,5 @@
 # ==========================================================
-# == Pygame Island Demo (Integrated, Option B)
+# == game Island Demo (Integrated, Option B)
 # ==========================================================
 
 import pygame

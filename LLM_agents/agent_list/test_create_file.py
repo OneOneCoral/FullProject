@@ -10,9 +10,12 @@ print("cwd:", os.getcwd())
 print("sys.path[0]:", sys.path[0])
 print("sys.path:", sys.path)
 
-from base import STATE_DIR, safe_write_text, Change, apply_changes
+from agent_runner_base.base import STATE_DIR, safe_write_text, Change, apply_changes
 
 print(">>> Agent module loaded:", __name__)
+
+os.environ.get("TRACE_ID", "no-trace")
+
 # -------------------------
 # Minimal framework
 # -------------------------
@@ -21,7 +24,7 @@ class CreateFileAgent:
 
     def run(self) -> List[Change]:
         # what dose STATE_DIR do?
-        target = STATE_DIR / "uploade23.txt"
+        target = STATE_DIR / "uploade4.txt"
         content = "up3 from agent!\n\n=^.^=\n"
         return [Change(path=target, summary="Create test file in Agent/state", content=content)]
 

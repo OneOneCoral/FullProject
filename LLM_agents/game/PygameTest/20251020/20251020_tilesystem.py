@@ -1,5 +1,5 @@
 # ==========================================================
-# == Pygame Island World (Organic Tile System)
+# == game Island World (Organic Tile System)
 # ==========================================================
 import pygame, random, math
 from perlin_noise import PerlinNoise

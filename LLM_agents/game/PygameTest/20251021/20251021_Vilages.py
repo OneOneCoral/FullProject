@@ -1,5 +1,5 @@
 # ==========================================================
-# == Pygame Island World Optimized (Tile Simulation, Zoom, Performance Profiling)
+# == game Island World Optimized (Tile Simulation, Zoom, Performance Profiling)
 # ==========================================================
 import pygame, random, math, time
 from perlin_noise import PerlinNoise

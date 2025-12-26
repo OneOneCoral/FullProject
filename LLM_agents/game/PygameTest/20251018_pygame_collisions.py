@@ -1,5 +1,5 @@
 # ==========================================================
-# == Pygame Island Demo with Camera, Swept-AABB, Joystick, and Layers
+# == game Island Demo with Camera, Swept-AABB, Joystick, and Layers
 # ==========================================================
 
 import pygame
